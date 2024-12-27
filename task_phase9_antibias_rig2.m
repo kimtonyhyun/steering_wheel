@@ -5,11 +5,10 @@
 % Gain is similar to phase 5 (90 deg), 7 start positions per side (dissociate wheel speed encoding and cursor position encoding)
 
 clear all; close all;
-cd('C:\Users\octopus\Documents\steering_wheel_task');
+% cd('C:\Users\octopus\Documents\steering_wheel_task');
 
-%a = arduino('COM4');%
-a = arduino('COM7');
-screen = Screen_v2();
+a = arduino('COM3');
+screen = Screen();
 
 % check the cursor type
 figure
