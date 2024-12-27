@@ -11,9 +11,9 @@ a = arduino('COM3');
 screen = Screen();
 
 % check the cursor type
-figure
-I = imagesc(screen.cursor_image);daspect([1 1 1])
-colormap(gray);colorbar;
+% figure
+% I = imagesc(screen.cursor_image);daspect([1 1 1])
+% colormap(gray);colorbar;
 
 %%
 
@@ -30,10 +30,8 @@ params.x0_list = [-1 -1 1 1 -1 -1 1 1];
 params.x0_list_label = {'Left','Left','Right','Right', 'Left','Left','Right','Right'}; %s minimum,
 params.x0_d_list = [0.15 0.17 0.23 0.26 0.58]; %s minimum,
 params.x0_d_list =  [0.40 0.60 0.80 1 1.2 1.4 1.6]*0.58; % 0.2320    0.3480    0.4640    0.5800    0.6960    0.8120    0.9280  %%[0.25 0.5 0.75 1 1.25 1.5 1.75]*0.58; % 0.1450    0.2900    0.4350    0.5800    0.7250    0.8700    1.0150-almost edge
-params.quiescent_period_duration = 1; % s
 params.xGoal = 0;
 params.xFail = 1.16;
-
 
 % Gain of 1 means that one full turn of the wheel is required to cover HALF
 % of the screen width.
@@ -45,13 +43,6 @@ Fs = 44100;
 
 % Preallocate results
 results = initialize_results_v2(num_trials);
-
-% Note (2024 Dec 10):
-% Shikano argues that we should not be calling drawnow in rapid succession.
-% What happens if we call drawnow at a rate faster than the frame rate of
-% the iPad screen (60 Hz)? The post_drawnow_delay will prevent successive
-% drawnow calls from occuring faster than 60 Hz.
-params.post_drawnow_delay = 0.0168; % 0.017 works , 0.016 OK but risky, 0.0165 realistic, 0.0168 (21Hz) best?
 
 %%
 
@@ -148,7 +139,7 @@ while trial_number < num_trials
     screen.show_cursor; 
     screen.set_cursor_position(x0);
     drawnow;    
-    pause(params.post_drawnow_delay);
+%     pause(params.post_drawnow_delay);
     
     trial_result = 'Timeout';
     t = 0; 
@@ -197,7 +188,7 @@ while trial_number < num_trials
                 break;
             end
             
-            pause(params.post_drawnow_delay);
+%             pause(params.post_drawnow_delay);
             x_pre = x;
         else
             t = toc;
@@ -256,5 +247,5 @@ screen.hide_cursor;
 % Save results to file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 results_filename = sprintf('Results_phase9_AB_flash_%s.mat', timestamp);
-save(results_filename, 'results', 'params', 'num_trials');
+% save(results_filename, 'results', 'params', 'num_trials');
 

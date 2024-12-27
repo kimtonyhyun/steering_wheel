@@ -11,10 +11,13 @@ classdef Screen < handle
     end
     
     properties (Constant)
-        % Pixel resolution of the iPad screen
-        %------------------------------------------------------------
-        Width = 2048;
-        Height = 1536;
+        % iPad screen (obsolete)
+%         Width = 2048;
+%         Height = 1536;
+
+        % 240 Hz monitor
+        Width = 1920;
+        Height = 1080;
         
         % Cursor visual parameters
         %------------------------------------------------------------
@@ -34,11 +37,11 @@ classdef Screen < handle
             %   - does NOT have Windows scaling (i.e. set to 100% scaling)
                       
             % Figure fills the iPad screen
-%             primary_screen_offset = 1920;
-%             obj.h_fig = figure('MenuBar', 'none',...
-%                 'Position',... % [Left Bottom Width Height]
-%                 [primary_screen_offset 0 Screen.Width Screen.Height]);
-            obj.h_fig = figure('MenuBar', 'none');
+            primary_screen_offset = 2560;
+            obj.h_fig = figure('MenuBar', 'none',...
+                'Position',... % [Left Bottom Width Height]
+                [primary_screen_offset 0 Screen.Width Screen.Height]);
+%             obj.h_fig = figure('MenuBar', 'none');
             
             % Fill the figure
             obj.h_ax = subplot('Position', [0 0 1 1]);
