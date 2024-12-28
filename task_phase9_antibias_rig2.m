@@ -110,17 +110,16 @@ while trial_number < num_trials
     %------------------------------------------------------------
     fprintf('  - Entering quiescent period for a minimum of %.3f s... ',...
         params.quiescent_period_duration);
-    a.reset_encoder_count;
+    a.get_encoder_count_silent; % Resets the counter
     
     tic;
     t = 0;
     t_qp_threshold = params.quiescent_period_duration;
     while (t < t_qp_threshold)
         t = toc;
-        count = a.get_encoder_count;
+        count = a.get_encoder_count_silent;
         
         if abs(count) > 6 % Roughly +/-2 deg of wheel, assuming ppr=1024
-            a.reset_encoder_count;
             t_qp_threshold = t + params.quiescent_period_duration;
         end
     end
@@ -133,7 +132,7 @@ while trial_number < num_trials
     cursor_trajectory = zeros(params.max_trial_duration * 1e3, 2);
     indicator_flashes = zeros(params.max_trial_duration * 1e3, 2);
 
-    a.reset_encoder_count;
+    a.get_encoder_count_silent; % Resets the counter
     tic;
     a.set_screen_ttl(1);
     screen.show_cursor; 
@@ -151,7 +150,7 @@ while trial_number < num_trials
         ind = ind + 1;
         
         count = a.get_encoder_count();
-        x = x0 + params.gain * (count / params.ppr);
+        x = x_pre + params.gain * (count / params.ppr);
         
         if x ~= x_pre;
             FrameNo = FrameNo + 1;

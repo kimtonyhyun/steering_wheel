@@ -2,17 +2,20 @@
  * Tony Hyun Kim
  * kimth@stanford.edu
  */
+#include <util/atomic.h>
 
 #define FRAME_CLK 2
+#define RT_CLK 3
 
-#define BMIDI_RR 21
-#define BMIDI_R  20
-#define BMIDI_L  19
-#define BMIDI_LL 18
+#define BMIDI_LL 45 // PORTL, PIN4
+#define BMIDI_L  47
+#define BMIDI_0  49
+#define BMIDI_R  51
+#define BMIDI_RR 53
 
-#define READ_INDICATOR 45
+#define READ_INDICATOR 4
 
-volatile int step_counter = 0; // 16-bit, ranges -32,768 to 32,767
+volatile int8_t step_counter = 0; // 8-bit, ranges -256 to 255
 
 /* Analog and Digital Input and Output Server for MATLAB     */
 /* Giampiero Campa, Copyright 2013 The MathWorks, Inc        */
@@ -50,41 +53,41 @@ volatile int step_counter = 0; // 16-bit, ranges -32,768 to 32,767
 
 #define DEBOUNCE_DELAY 1000 // microseconds
 
+void count_t() {
+  delayMicroseconds(500);
+  if (digitalRead(BMIDI_R)){
+    step_counter+=1;
+  }
+  else if (digitalRead(BMIDI_L)){
+    step_counter-=1;
+  }
+  else if (digitalRead(BMIDI_RR)){
+    step_counter+=2;
+  }
+  else if (digitalRead(BMIDI_LL)){
+    step_counter-=2;
+  }
+  else{
+    // do nothing
+  }
+}
+
 void setup() {
   /* initialize serial                                       */
   Serial.begin(115200);
 
   pinMode(FRAME_CLK, INPUT);
-
+  pinMode(RT_CLK, INPUT);
+  
   pinMode(BMIDI_RR, INPUT);
   pinMode(BMIDI_R, INPUT);
+  pinMode(BMIDI_0, INPUT);
   pinMode(BMIDI_L, INPUT);
   pinMode(BMIDI_LL, INPUT);
 
   pinMode(READ_INDICATOR, OUTPUT);
 
-  attachInterrupt(digitalPinToInterrupt(BMIDI_RR), count_RR, RISING);
-  attachInterrupt(digitalPinToInterrupt(BMIDI_R),  count_R, RISING);
-  attachInterrupt(digitalPinToInterrupt(BMIDI_L),  count_L, RISING);
-  attachInterrupt(digitalPinToInterrupt(BMIDI_LL), count_LL, RISING);
-  
-}
-
-void count_RR() {
-    step_counter = 0;
-    step_counter+=2;
-}
-void count_R() {
-    step_counter = 0;
-    step_counter+=1;
-}
-void count_L() {
-    step_counter = 0;
-    step_counter-=1;
-}
-void count_LL() {
-    step_counter = 0;
-    step_counter-=2;
+  attachInterrupt(digitalPinToInterrupt(RT_CLK), count_t, CHANGE);
 }
 
 
@@ -323,9 +326,21 @@ void loop() {
 
       case 390: /* get_encoder_count */
         digitalWrite(READ_INDICATOR, 1);
-        Serial.println(lowByte(step_counter));
-        Serial.println(highByte(step_counter));
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+          Serial.println(step_counter);
+          step_counter = 0;
+        }
         digitalWrite(READ_INDICATOR, 0);
+        s = -1;
+        break;
+
+      case 400: /* get_encoder_count_silent */
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+          Serial.println(step_counter);
+          step_counter = 0;
+        }
         s = -1;
         break;
 

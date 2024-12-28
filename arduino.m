@@ -11,14 +11,11 @@ classdef arduino < handle
         sspd   % Stepper Motors Speed Status
         encs   % Encoders Status
         sktc   % Motor Server Running on the Arduino Board
-        
-        % THK
-        q % Quantizer object for two's comp binary to numeric
     end
     
     properties (Hidden=true)
         chks = false;  % Checks serial connection before every operation
-        chkp = true;   % Checks parameters before every operation
+        chkp = false;   % Checks parameters before every operation
     end
     
     methods
@@ -144,9 +141,7 @@ classdef arduino < handle
             a.sspd=0*ones(1,2);
             
             % notify successful installation
-            % THK
-            a.q = quantizer([16 0]);
-            disp('Arduino successfully connected, with quantizer!');
+            disp('Arduino successfully connected!');
             
         end % arduino
         
@@ -1696,17 +1691,13 @@ classdef arduino < handle
         end
         
         function val = get_encoder_count(a)
-            fwrite(a.aser, [87, 0], 'uchar');
-            
-            low_val = fscanf(a.aser, '%d');
-            high_val = fscanf(a.aser, '%d');
-            
-            val = bin2num(a.q,...
-                [dec2bin(high_val,8) dec2bin(low_val,8)]);
+            fwrite(a.aser, [87, 0], 'uchar');           
+            val = fscanf(a.aser, '%d');
         end
         
-        function reset_encoder_count(a)
+        function val = get_encoder_count_silent(a)
             fwrite(a.aser, [86, 0], 'uchar');
+            val = fscanf(a.aser, '%d');
         end
         
         % round trip

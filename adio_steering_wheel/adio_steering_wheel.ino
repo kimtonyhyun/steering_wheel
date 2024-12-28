@@ -3,14 +3,17 @@
  * kimth@stanford.edu
  */
 
+#include <util/atomic.h>
+
 #define ENC_A 2
 #define ENC_B 3
 #define ENC_I 4
 #define PUMP_ENABLE 5
 #define BEHAVIOR_CLOCK 11 // Controlled by Timer1
 #define SCREEN_TTL 12
+#define READ_INDICATOR 13
 
-volatile int step_counter = 0; // 16-bit, ranges -32,768 to 32,767
+volatile int8_t step_counter = 0; // 8-bit, ranges -256 to 255
 
 #define PUMP_DELAY 10 // ms
 int duration_per_pulse_ms;
@@ -72,6 +75,8 @@ void setup() {
 
   pinMode(SCREEN_TTL, OUTPUT);
   digitalWrite(SCREEN_TTL, 0);
+
+  pinMode(READ_INDICATOR, OUTPUT);
 
   attachInterrupt(digitalPinToInterrupt(ENC_A), count_A, RISING);
 
@@ -321,14 +326,23 @@ void loop() {
         s = -1;
         break;
 
-      case 380: /* reset_encoder_count */
-        step_counter = 0;
+      case 380: /* get_encoder_count_silent */
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+          Serial.println(step_counter);
+          step_counter = 0;
+        }
         s = -1;
         break;
 
       case 390: /* get_encoder_count */
-        Serial.println(lowByte(step_counter));
-        Serial.println(highByte(step_counter));
+        digitalWrite(READ_INDICATOR, 1);
+        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+        {
+          Serial.println(step_counter);
+          step_counter = 0;
+        }
+        digitalWrite(READ_INDICATOR, 0);
         s = -1;
         break;
 
