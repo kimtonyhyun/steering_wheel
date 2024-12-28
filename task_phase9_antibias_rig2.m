@@ -125,88 +125,95 @@ while trial_number < num_trials
     end
     fprintf('Total duration was %.3f s\n', t_qp_threshold);
     
-    % Show cursor
-    %------------------------------------------------------------
-    % Below, assume that sampling rate is slower than 1 ms
-    % Format: [Time(s) CursorPosition]
-    cursor_trajectory = zeros(params.max_trial_duration * 1e3, 2);
-    indicator_flashes = zeros(params.max_trial_duration * 1e3, 2);
+    % For preallocation, assume that sampling rate is slower than 1 ms
+    cursor_trajectory = zeros(params.max_trial_duration * 1e3, 2); % Format: [Time(s) CursorPosition]
+    ts = zeros(params.max_trial_duration *1e3, 1);
+    screen_indicator = zeros(params.max_trial_duration * 1e3, 1);
+    counts = zeros(params.max_trial_duration * 1e3, 1);
 
     a.get_encoder_count_silent; % Resets the counter
+    
+    % Show cursor
+    %------------------------------------------------------------
     tic;
     a.set_screen_ttl(1);
-    screen.show_cursor; 
     screen.set_cursor_position(x0);
+    screen.show_cursor; % Screen indicator is also made visible
     drawnow;    
 %     pause(params.post_drawnow_delay);
+    indicator_on = true;
     
     trial_result = 'Timeout';
-    t = 0; 
-    indicator_ONOFF = 1;
-    ind = 0; % For logging cursor trajectory
-    x_pre = x0;    
-    FrameNo = 0;
+    t = 0;     
+    ind = 0; % Index of Arduino 'get_encoder_count'
+    x_pre = x0;
+    trial_done = false;
+
     while t < params.max_trial_duration  
         ind = ind + 1;
         
+        t = toc;
         count = a.get_encoder_count();
         x = x_pre + params.gain * (count / params.ppr);
         
-        if x ~= x_pre;
-            FrameNo = FrameNo + 1;
+        % Update the screen if the cursor position has changed
+        if count ~= 0
             
-            if x*x_pre<=0; x=0; end; x_pre+x;
-            if abs(x)>=0.58*2; x=0.58*2*x/abs(x);end
+            if x*x_pre<=0; x=0; end
+            if abs(x)>=0.58*2; x=0.58*2*x/abs(x); end
 
             screen.set_cursor_position(x);  % update the cursor position
-            if mod(FrameNo,2)==0 % screen refresh indicator
+            indicator_on = ~indicator_on; % Toggle on every frame update
+            if indicator_on
                 screen.h_cursor_indicator.Visible = 'on';
-                indicator_ONOFF = 1;
-                %a.set_screen_ttl(1);
             else
                 screen.h_cursor_indicator.Visible = 'off';
-                indicator_ONOFF = 0;
-                %a.set_screen_ttl(0);
             end
             drawnow;
-            
-            t = toc;
-            cursor_trajectory(ind,:) = [t x];
-            indicator_flashes(ind,:) = [t indicator_ONOFF];
             
             if ((x0 < xGoal) && (x >= xGoal)) || ((x0 > xGoal) && (x <= xGoal))
                 % Cursor crossed the origin ==> Success
                 sound(sound_hit, Fs);
                 a.dispense(params.duration_per_pulse_ms, params.num_pulses);
                 trial_result = 'Hit';
-                break;
+                trial_done = true;
             elseif abs(x) >= abs(xFail)
                 % Cursor is out of screen ==> Failure
                 sound(sound_miss, Fs);
                 trial_result = 'Miss';
-                break;
+                trial_done = true;
             end
             
 %             pause(params.post_drawnow_delay);
             x_pre = x;
-        else
-            t = toc;
-            cursor_trajectory(ind,:) = [t x];
-            indicator_flashes(ind,:) = [t indicator_ONOFF];
+        end % Cursor position has changed
+
+        % Log the 'get_encoder_count' interaction
+        ts(ind) = t;
+        cursor_trajectory(ind,:) = [t x]; % Leave t in for backwards compatibility
+        screen_indicator(ind) = indicator_on;
+        counts(ind) = count;
+
+        if trial_done
+            break;
         end
-        
     end
-    cursor_trajectory = cursor_trajectory(1:ind,:);
-    indicator_flashes = indicator_flashes(1:ind,:);
+
     fprintf('  - Result: %s!\n', trial_result);
     pause(params.post_trial_cursor_on_duration);
     screen.hide_cursor;
     a.set_screen_ttl(0);
     
-    %sound for timeout
+    % Sound for timeout
     if trial_result(1) == 'T'
         sound(sound_miss, Fs);
     end
+
+    % Trim trial data
+    cursor_trajectory = cursor_trajectory(1:ind,:);
+    ts = ts(1:ind);
+    screen_indicator = screen_indicator(1:ind);
+    counts = counts(1:ind);   
     
     %Antibias
     Log_temp(1:7,:) =  Log_temp (2:end,:);
@@ -228,7 +235,9 @@ while trial_number < num_trials
     results(trial_number).stimulus_duration = cursor_trajectory(end,1);
     results(trial_number).cursor_trajectory = cursor_trajectory;
     results(trial_number).result = trial_result;
-    results(trial_number).indicator_flashes = indicator_flashes;
+    results(trial_number).ts = ts;
+    results(trial_number).screen_indicator = screen_indicator;
+    results(trial_number).counts = counts;
     
     % ITI (Store results & ITI flipped on 230816)
     %------------------------------------------------------------
