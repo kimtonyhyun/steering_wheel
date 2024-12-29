@@ -117,24 +117,25 @@ while trial_number < num_trials
         if count ~= 0 % Encoder reports movement
             x = x_prev + params.gain * (count / params.ppr);
             
-            if x*x_prev<=0; x=0; end
-            if abs(x)>=0.58*2; x=0.58*2*x/abs(x); end
-
-            screen.draw_cursor_at(x);  % update the cursor position
-                        
-            if ((x0 < xGoal) && (x >= xGoal)) || ((x0 > xGoal) && (x <= xGoal))
+            if (x*x_prev) <= 0
                 % Cursor crossed the origin ==> Success
                 sound(sound_hit, Fs);
                 a.dispense(params.duration_per_pulse_ms, params.num_pulses);
                 trial_result = 'Hit';
                 trial_done = true;
-            elseif abs(x) >= abs(xFail)
+
+                x = 0; % Clamp display
+            end
+            if abs(x) >= abs(xFail)
                 % Cursor is out of screen ==> Failure
                 sound(sound_miss, Fs);
                 trial_result = 'Miss';
                 trial_done = true;
+
+                x = xFail * sign(x); % Clamp display
             end
-            
+
+            screen.draw_cursor_at(x);  % update the cursor position                        
             x_prev = x;
         end % Encoder reports movement
 
