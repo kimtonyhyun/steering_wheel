@@ -4,26 +4,23 @@
 % Cursor position is updated only when there is a change in x.
 % Gain is similar to phase 5 (90 deg), 7 start positions per side (dissociate wheel speed encoding and cursor position encoding)
 
-clear all; close all;
+sca; % Close Psychtoolbox screen
+close all;
+clear;
+
 % cd('C:\Users\octopus\Documents\steering_wheel_task');
 
 a = arduino('COM3');
-screen = Screen();
-
-% check the cursor type
-% figure
-% I = imagesc(screen.cursor_image);daspect([1 1 1])
-% colormap(gray);colorbar;
 
 %%
 
-clearvars -except a screen;
+clearvars -except a;
 
 params = get_default_params;
 params.duration_per_pulse_ms = 30;
 params.num_pulses = 2;
 
-num_trials = 300;
+num_trials = 3;
 'Phase 9'
 
 params.x0_list = [-1 -1 1 1 -1 -1 1 1]; 
@@ -47,7 +44,9 @@ results = initialize_results_v2(num_trials);
 %%
 
 flush(a); % Serial line may have garbage from previous interactions
-screen.hide_cursor;
+clear screen;
+
+screen = ScreenPTB();
 
 % task start
 a.start_behavior_clock;
@@ -55,56 +54,21 @@ pause(2);
 
 trial_number = 0;
 
-% randomization block
-x0_list_temp = params.x0_list;  %start_location_remaining
-x0_list_temp_label = params.x0_list_label
-%Antibias
-Log_temp = zeros(8,2) + NaN;
-
 while trial_number < num_trials
     trial_number = trial_number + 1;
     fprintf('%s: Trial %d\n', datestr(now), trial_number);
     
-    % Select the initial cursor position
-    %------------------------------------------------------------   
-    if isempty(x0_list_temp)
-        x0_list_antibias = [];
-        x0_list_label_antibias = [];
-        %Left 
-        Log_temp_L = Log_temp(find(Log_temp(:,1)==-1),2);
-        Unhit_L    = max([0.5 length(find(Log_temp_L<1))]);
-        Log_temp_R = Log_temp(find(Log_temp(:,1)== 1),2);
-        Unhit_R    = max([0.5 length(find(Log_temp_R<1))]);
-        N_L = round(8 * Unhit_L /(Unhit_L+ Unhit_R));
-        N_R = 8 - N_L;
-        for nl = 1:N_L;
-            x0_list_antibias(1,nl) = -1;
-            x0_list_label_antibias{1,nl} =  'Left';
-        end
-        for nl = N_L+1:8;
-            x0_list_antibias(1,nl) = 1;
-            x0_list_label_antibias{1,nl} =  'Right';
-        end        
-        x0_list_temp = x0_list_antibias; %Params.start_location_list;
-        x0_list_temp_label = x0_list_label_antibias %Params.start_location_list_label;
-    end
-    ind = randi(length(x0_list_temp));
-    x0_pre = x0_list_temp(ind);
-    position_label = x0_list_temp_label{ind};
-    x0_list_temp(ind) = [];
-    x0_list_temp_label(ind) = [];
-    ind = randi(length(params.x0_d_list));
-    Distance = params.x0_d_list(ind);
-    x0 = x0_pre * Distance;
+    x0 = randi(2) - 1.5;
     xGoal = params.xGoal;
-    xFail = params.xFail * x0 / abs(x0);
+    xFail = params.xFail * sign(x0);
     
-    screen.set_cursor_position(x0);
-    if (x0 < 0)
-        fprintf('  - LEFT start from x0 = %.3f (%.3f)\n', x0, round(x0/0.58,2));
+    if (x0 > 0)
+        fprintf('  - RIGHT start from x0 = %.3f\n', x0);
     else
-        fprintf('  - RIGHT start from x0 = %.3f (%.3f)\n', x0, round(x0/0.58,2));
+        fprintf('  - LEFT start from x0 = %.3f\n', x0);
     end
+
+    screen.draw_blank;
 
     % Quiescent period
     %------------------------------------------------------------
@@ -128,7 +92,6 @@ while trial_number < num_trials
     % For preallocation, assume that sampling rate is slower than 1 ms
     cursor_trajectory = zeros(params.max_trial_duration * 1e3, 2); % Format: [Time(s) CursorPosition]
     ts = zeros(params.max_trial_duration *1e3, 1);
-    screen_indicator = zeros(params.max_trial_duration * 1e3, 1);
     counts = zeros(params.max_trial_duration * 1e3, 1);
 
     a.get_encoder_count_silent; % Resets the counter
@@ -137,16 +100,12 @@ while trial_number < num_trials
     %------------------------------------------------------------
     tic;
     a.set_screen_ttl(1);
-    screen.set_cursor_position(x0);
-    screen.show_cursor; % Screen indicator is also made visible
-    drawnow;    
-    pause(params.post_drawnow_delay);
-    indicator_on = true;
+    screen.draw_cursor_at(x0);
     
     trial_result = 'Timeout';
     t = 0;     
     ind = 0; % Index of Arduino 'get_encoder_count'
-    x_pre = x0;
+    x_prev = x0;
     trial_done = false;
 
     while t < params.max_trial_duration  
@@ -154,23 +113,15 @@ while trial_number < num_trials
         
         t = toc;
         count = a.get_encoder_count();
-        x = x_pre + params.gain * (count / params.ppr);
         
-        % Update the screen if the cursor position has changed
-        if count ~= 0
+        if count ~= 0 % Encoder reports movement
+            x = x_prev + params.gain * (count / params.ppr);
             
-            if x*x_pre<=0; x=0; end
+            if x*x_prev<=0; x=0; end
             if abs(x)>=0.58*2; x=0.58*2*x/abs(x); end
 
-            screen.set_cursor_position(x);  % update the cursor position
-            indicator_on = ~indicator_on; % Toggle on every frame update
-            if indicator_on
-                screen.h_cursor_indicator.Visible = 'on';
-            else
-                screen.h_cursor_indicator.Visible = 'off';
-            end
-            drawnow;
-            
+            screen.draw_cursor_at(x);  % update the cursor position
+                        
             if ((x0 < xGoal) && (x >= xGoal)) || ((x0 > xGoal) && (x <= xGoal))
                 % Cursor crossed the origin ==> Success
                 sound(sound_hit, Fs);
@@ -184,14 +135,12 @@ while trial_number < num_trials
                 trial_done = true;
             end
             
-            pause(params.post_drawnow_delay);
-            x_pre = x;
-        end % Cursor position has changed
+            x_prev = x;
+        end % Encoder reports movement
 
         % Log the 'get_encoder_count' interaction
+        cursor_trajectory(ind,:) = [t x_prev];
         ts(ind) = t;
-        cursor_trajectory(ind,:) = [t x]; % Leave t in for backwards compatibility
-        screen_indicator(ind) = indicator_on;
         counts(ind) = count;
 
         if trial_done
@@ -201,7 +150,7 @@ while trial_number < num_trials
 
     fprintf('  - Result: %s!\n', trial_result);
     pause(params.post_trial_cursor_on_duration);
-    screen.hide_cursor;
+    screen.draw_blank;
     a.set_screen_ttl(0);
     
     % Sound for timeout
@@ -212,21 +161,10 @@ while trial_number < num_trials
     % Trim trial data
     cursor_trajectory = cursor_trajectory(1:ind,:);
     ts = ts(1:ind);
-    screen_indicator = screen_indicator(1:ind);
     counts = counts(1:ind);   
     
-    %Antibias
-    Log_temp(1:7,:) =  Log_temp (2:end,:);
-    Log_temp(8,1)  =  x0_pre;
-    if trial_result(1) == 'H'
-        Log_temp(8,2)  =  1; 
-    elseif trial_result(1) == 'M'
-        Log_temp(8,2)  =  -1; 
-    else
-        Log_temp(8,2)  =  0; 
-    end
-
-    % Store results
+    % Store results. This should match the preallocated format defined in
+    % 'initialize_results_v2'
     %------------------------------------------------------------
     results(trial_number).x0 = x0;
     results(trial_number).xGoal = xGoal;
@@ -236,7 +174,6 @@ while trial_number < num_trials
     results(trial_number).cursor_trajectory = cursor_trajectory;
     results(trial_number).result = trial_result;
     results(trial_number).ts = ts;
-    results(trial_number).screen_indicator = screen_indicator;
     results(trial_number).counts = counts;
     
     % ITI (Store results & ITI flipped on 230816)
@@ -250,7 +187,7 @@ end
 %%
 a.stop_behavior_clock;
 a.set_screen_ttl(0);
-screen.hide_cursor;
+clear screen;
 
 % Save results to file
 timestamp = datestr(now, 'yymmdd-HHMMSS');
