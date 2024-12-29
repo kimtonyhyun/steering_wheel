@@ -1,4 +1,4 @@
-function [visual_cursor] = Gratings_sine ; 
+function visual_cursor = Gratings_sine()
 % 220419 the BG should not be bright, should be the darkest. Stripes should be brighter than BG
 
 %close all
@@ -56,7 +56,7 @@ end
 
 function [Datafilt]=gaussian_local(Data,sigma);
 if sigma>0
-    Range=400;%ƒJ?[ƒlƒ‹ƒeƒ“ƒvƒŒ?[ƒg‚Ì•Ð‘¤ƒsƒNƒZƒ‹?”?B?ÅŒã‚Ì•û‚Í‚Ù‚Æ‚ñ‚Çƒ[ƒ?‚Å‚ ‚é‚±‚Æ‚ª–]‚Ü‚µ‚¢?B‚ ‚Ü‚èRange‚ª‘å‚«‚¢‚Æ‰ð?Í‚ÌŽžŠÔ‚Î‚Á‚©‚è?H‚¤‚Ì‚Å‚Í‚È‚¢‚©?B
+    Range=400;%ƒJ?[ƒlƒ‹ƒeƒ“ƒvƒŒ?[ƒg‚Ì•Ð‘¤ƒsƒNƒZƒ‹??B?ÅŒã‚Ì•û‚Í‚Ù‚Æ‚ñ‚Çƒ[?‚Å‚ ‚é‚±‚Æ‚ª–]‚Ü‚µ‚¢?B‚ ‚Ü‚èRange‚ª‘å‚«‚¢‚Æ‰ð?Í‚ÌŽžŠÔ‚Î‚Á‚©‚è?H‚¤‚Ì‚Å‚Í‚È‚¢‚©?B
 
     %1ŽŸŒ³ƒf?[ƒ^‚©2ŽŸŒ³ƒf?[ƒ^‰»‚ðŒˆ‚ß‚é
     dimen = 1;
@@ -64,7 +64,7 @@ if sigma>0
         dimen=2;
     end
 
-    %Žw’è‚µ‚½ƒpƒ‰ƒ??[ƒ^‚É‚¨‚¯‚éƒJ?[ƒlƒ‹‚Ìƒeƒ“ƒvƒŒ?[ƒg‚ð?ì?¬
+    %Žw’è‚µ‚½ƒpƒ‰??[ƒ^‚É‚¨‚¯‚éƒJ?[ƒlƒ‹‚Ìƒeƒ“ƒvƒŒ?[ƒg‚ð??¬
     if dimen==1;
         for x=0:Range
             Prima  = (1/sqrt(2*pi*sigma^2))^dimen ;

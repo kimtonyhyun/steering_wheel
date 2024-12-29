@@ -19,4 +19,4 @@ params.post_trial_cursor_on_duration = 1; % s
 % drawnow calls from occuring faster than 60 Hz.
 % params.post_drawnow_delay = 0.0168; % 0.017 works , 0.016 OK but risky, 0.0165 realistic, 0.0168 (21Hz) best?
 
-params.post_drawnow_delay = 0.0045; 
+params.post_drawnow_delay = 0.0045;

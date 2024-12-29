@@ -140,7 +140,7 @@ while trial_number < num_trials
     screen.set_cursor_position(x0);
     screen.show_cursor; % Screen indicator is also made visible
     drawnow;    
-%     pause(params.post_drawnow_delay);
+    pause(params.post_drawnow_delay);
     indicator_on = true;
     
     trial_result = 'Timeout';
@@ -184,7 +184,7 @@ while trial_number < num_trials
                 trial_done = true;
             end
             
-%             pause(params.post_drawnow_delay);
+            pause(params.post_drawnow_delay);
             x_pre = x;
         end % Cursor position has changed
 
