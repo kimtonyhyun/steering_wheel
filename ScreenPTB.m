@@ -1,4 +1,9 @@
 classdef ScreenPTB < handle
+    % Tony Hyun Kim
+    % kimth@stanford.edu
+    %
+    % Notes:
+    % - 12/29/2024: Built with Psychotoolbox 3.0.19.16 on Matlab 2024b
     properties (SetAccess=private)
         width
         height

@@ -58,7 +58,7 @@ while trial_number < num_trials
     trial_number = trial_number + 1;
     fprintf('%s: Trial %d\n', datestr(now), trial_number);
     
-    x0 = randi(2) - 1.5;
+    x0 = randi(2) - 1.5; % Either -0.5 or 0.5
     xGoal = params.xGoal;
     xFail = params.xFail * sign(x0);
     
@@ -118,21 +118,18 @@ while trial_number < num_trials
             x = x_prev + params.gain * (count / params.ppr);
             
             if (x*x_prev) <= 0
-                % Cursor crossed the origin ==> Success
-                sound(sound_hit, Fs);
-                a.dispense(params.duration_per_pulse_ms, params.num_pulses);
+                % Cursor crossed the origin ==> Success                
                 trial_result = 'Hit';
                 trial_done = true;
 
-                x = 0; % Clamp display
+                x = 0; % Clamp
             end
             if abs(x) >= abs(xFail)
                 % Cursor is out of screen ==> Failure
-                sound(sound_miss, Fs);
                 trial_result = 'Miss';
                 trial_done = true;
 
-                x = xFail * sign(x); % Clamp display
+                x = xFail * sign(x); % Clamp
             end
 
             screen.draw_cursor_at(x);  % update the cursor position                        
@@ -149,15 +146,21 @@ while trial_number < num_trials
         end
     end
 
+    % Process trial result
+    %------------------------------------------------------------
+    switch trial_result(1)
+        case 'H'
+            sound(sound_hit, Fs);
+            a.dispense(params.duration_per_pulse_ms, params.num_pulses);
+        case 'M'
+            sound(sound_miss, Fs);
+        case 'T'
+            sound(sound_miss, Fs);
+    end
     fprintf('  - Result: %s!\n', trial_result);
     pause(params.post_trial_cursor_on_duration);
-    screen.draw_blank;
     a.set_screen_ttl(0);
-    
-    % Sound for timeout
-    if trial_result(1) == 'T'
-        sound(sound_miss, Fs);
-    end
+    screen.draw_blank; % Do this after setting Screen TTL = 0
 
     % Trim trial data
     cursor_trajectory = cursor_trajectory(1:ind,:);
