@@ -12,34 +12,31 @@ clear;
 
 a = arduino('COM3');
 
-%%
-
-clearvars -except a;
-
-params = get_default_params;
-params.duration_per_pulse_ms = 30;
-params.num_pulses = 2;
-
-num_trials = 3;
-'Phase 9'
-
-params.x0_list = [-1 -1 1 1 -1 -1 1 1]; 
-params.x0_list_label = {'Left','Left','Right','Right', 'Left','Left','Right','Right'}; %s minimum,
-params.x0_d_list = [0.15 0.17 0.23 0.26 0.58]; %s minimum,
-params.x0_d_list =  [0.40 0.60 0.80 1 1.2 1.4 1.6]*0.58; % 0.2320    0.3480    0.4640    0.5800    0.6960    0.8120    0.9280  %%[0.25 0.5 0.75 1 1.25 1.5 1.75]*0.58; % 0.1450    0.2900    0.4350    0.5800    0.7250    0.8700    1.0150-almost edge
-params.xGoal = 0;
-params.xFail = 1.16;
-
-% Gain of 1 means that one full turn of the wheel is required to cover HALF
-% of the screen width.
-params.gain = 2.32;%:90deg(0.58/0.25) 1.74%:120deg(0.58/0.33); 1.1666;%:180deg %xtimes gain from screen edge to center(gain=1;0.58 turn to center from x0=0.58). gain=0.58/x 
-
 sound_hit = audioread('sound/10kHz_500ms_fadein.mp3');
 sound_miss = audioread('sound/White_500ms.mp3');
 Fs = 44100;
 
+%%
+
+clearvars -except a sound_hit sound_miss Fs;
+
+params = get_default_params;
+
+params.duration_per_pulse_ms = 30;
+params.num_pulses = 2;
+
+params.gain = 2.32; % gain=1: One turn of wheel --> 1/2 of screen width
+
+params.x0_list = [-1 -1 1 1 -1 -1 1 1]; 
+params.x0_d_list = [0.40 0.60 0.80 1 1.2 1.4 1.6]*0.58;
+params.xGoal = 0;
+params.xFail = 1.16;
+
 % Preallocate results
+num_trials = 300;
 results = initialize_results_v2(num_trials);
+
+fprintf('* * * PHASE 9 * * *\n');
 
 %%
 
@@ -48,10 +45,9 @@ clear screen;
 
 screen = ScreenPTB();
 
-+
-% We use the ESCAPE key to halt trials
-% escape_key = KbName('Escape');
-% [~, ~, keyCode] = KbCheck;
+% HOLD down the ESCAPE key to halt trials gracefully. We check for the 
+% escape key at the end of each trial (i.e. at the time of ITI)
+escape_key = KbName('Escape');
 
 % task start
 a.start_behavior_clock;
@@ -189,8 +185,17 @@ while trial_number < num_trials
     %------------------------------------------------------------
     iti = generate_iti;
     results(trial_number).iti = iti;
-    fprintf('  - Waiting an ITI of %.3f s\n', iti);
-    pause(iti);    
+    
+    [~, ~, keyCode] = KbCheck;
+    if keyCode(escape_key)
+        fprintf('%s: ESCAPE key detected. Finished after %d trials.\n',...
+            datestr(now), trial_number);
+        break;
+    else
+        % Only wait the ITI if we're continuing with trials
+        fprintf('  - Waiting an ITI of %.3f s\n', iti);
+        pause(iti);
+    end
 end
 
 %%
