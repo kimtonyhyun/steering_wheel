@@ -188,11 +188,16 @@ while trial_number < num_trials
     if keyCode(escape_key)
         fprintf('%s: ESCAPE key detected. Finished after %d trials.\n',...
             datestr(now), trial_number);
+        clear screen; % Return control back to Matlab command window
         break;
     end
 end
 
 %%
+
+% Note: With Psychtoolbox screen, you may need to ALT + TAB out of the PTB
+% window before you can control Matlab again
+
 a.stop_behavior_clock;
 a.set_screen_ttl(0);
 clear screen;
@@ -201,4 +206,3 @@ clear screen;
 timestamp = datestr(now, 'yymmdd-HHMMSS');
 results_filename = sprintf('Results_phase9_AB_flash_%s.mat', timestamp);
 % save(results_filename, 'results', 'params', 'num_trials');
-
