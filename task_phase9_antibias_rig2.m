@@ -48,6 +48,11 @@ clear screen;
 
 screen = ScreenPTB();
 
++
+% We use the ESCAPE key to halt trials
+% escape_key = KbName('Escape');
+% [~, ~, keyCode] = KbCheck;
+
 % task start
 a.start_behavior_clock;
 pause(2);
