@@ -1,4 +1,4 @@
-function x0_list = generate_x0_list_antibias(past_x0_list, past_results)
+function [x0_list, new_num_L, new_num_R] = generate_x0_list_antibias(past_x0_list, past_results)
 % Generate an uneven number of left vs. right start trials, taking into
 % account the directional bias of the animal.
 %
