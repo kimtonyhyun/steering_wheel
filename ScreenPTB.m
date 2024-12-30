@@ -44,14 +44,16 @@ classdef ScreenPTB < handle
             fprintf('Found %d x %d display operating at %.2f Hz\n',...
                 obj.width, obj.height, 1/obj.ifi);
 
-            cursor = Gratings_sine;
+            % Load cursor image
+            cdata = load('cursor_trim_400x400.mat', 'A');
+            cursor = cdata.A;
             obj.cursor_texture = Screen('MakeTexture', obj.window, cursor);
             [h, w] = size(cursor);
             obj.cursor_rect = [0 0 w h]; % Format: [top-left-x top-left-y bottom-right-x bottom-right-y]
             obj.cursor_ypos = obj.height / 4;
 
             obj.indicator = false;
-            ind_size = 100; % pixels
+            ind_size = 128; % pixels
             obj.indicator_rect = [0 obj.height-ind_size ind_size obj.height];
 
             % obj.waitframes is a KEY parameter for Psychtoolbox. It

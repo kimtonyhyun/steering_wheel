@@ -42,7 +42,7 @@ clear screen;
 screen = ScreenPTB();
 
 % HOLD down the ESCAPE key to halt trials gracefully. We check for the 
-% escape key at the end of each trial (i.e. at the time of ITI)
+% escape key at the end of each trial
 escape_key = KbName('Escape');
 
 % task start
