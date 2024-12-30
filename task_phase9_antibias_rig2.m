@@ -25,7 +25,8 @@ params.num_pulses = 2;
 
 params.gain = 2.32; % gain=1: One turn of wheel --> 1/2 of screen width
 
-params.x0_list = [-1 -1 1 1 -1 -1 1 1]; 
+% x0_list determines left (-1) vs. right (1) starts
+params.x0_list = [-1 -1 1 1 -1 -1 1 1];
 params.x0_d_list = [0.40 0.60 0.80 1 1.2 1.4 1.6]*0.58;
 params.xGoal = 0;
 params.xFail = 1.16;
@@ -51,11 +52,27 @@ pause(2);
 
 trial_number = 0;
 
+% Antibias code will generate _batches_ of left vs. right start trials
+% according to animal performance
+num_trials_per_batch = length(params.x0_list);
+x0_list = params.x0_list;
+
 while trial_number < num_trials
     trial_number = trial_number + 1;
     fprintf('%s: Trial %d\n', datestr(now), trial_number);
     
-    x0 = randi(2) - 1.5; % Either -0.5 or 0.5
+    if isempty(x0_list)
+        trial_range = (trial_number-num_trials_per_batch):(trial_number-1);
+        [x0_list, num_L, num_R] = generate_x0_list_antibias(...
+                    [results(trial_range).x0],...
+                    {results(trial_range).result});
+        fprintf('%s: Generated antibias batch of %d trials (%d left and %d right)\n',...
+            datestr(now), num_trials_per_batch, num_L, num_R);
+    end
+
+    [x0, x0_list] = sample_without_replacement(x0_list);
+    dist = randsample(params.x0_d_list, 1);
+    x0 = x0 * dist;
     xGoal = params.xGoal;
     xFail = params.xFail * sign(x0);
     
@@ -115,14 +132,14 @@ while trial_number < num_trials
             x = x_prev + params.gain * (count / params.ppr);
             
             if (x*x_prev) <= 0
-                % Cursor crossed the origin ==> Success                
+                % Cursor crossed the origin ==> Hit                
                 trial_result = 'Hit';
                 trial_done = true;
 
                 x = 0; % Clamp
             end
             if abs(x) >= abs(xFail)
-                % Cursor is out of screen ==> Failure
+                % Cursor is out of screen ==> Miss
                 trial_result = 'Miss';
                 trial_done = true;
 
