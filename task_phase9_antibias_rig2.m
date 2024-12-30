@@ -1,9 +1,3 @@
-% this code deals with in-demand screen refreshes
-% Goal position is recorded every trial (preparing for reversal tasks)
-% Cursor indicator on the screen flashes every time when the cursor position is updated
-% Cursor position is updated only when there is a change in x.
-% Gain is similar to phase 5 (90 deg), 7 start positions per side (dissociate wheel speed encoding and cursor position encoding)
-
 sca; % Close Psychtoolbox screen
 close all;
 clear;
@@ -20,6 +14,10 @@ Fs = 44100;
 
 clearvars -except a sound_hit sound_miss Fs;
 
+% Gain is similar to phase 5 (90 deg)
+% 7 start positions per side (dissociate wheel speed encoding and cursor position encoding)
+fprintf('* * * PHASE 9 * * *\n');
+
 params = get_default_params;
 
 params.duration_per_pulse_ms = 30;
@@ -35,8 +33,6 @@ params.xFail = 1.16;
 % Preallocate results
 num_trials = 300;
 results = initialize_results_v2(num_trials);
-
-fprintf('* * * PHASE 9 * * *\n');
 
 %%
 
@@ -182,19 +178,17 @@ while trial_number < num_trials
     results(trial_number).counts = counts;
     
     % ITI (Store results & ITI flipped on 230816)
-    %------------------------------------------------------------
     iti = generate_iti;
     results(trial_number).iti = iti;
-    
+    fprintf('  - Waiting an ITI of %.3f s\n', iti);
+    pause(iti);
+
+    % Check if we should stop trials
     [~, ~, keyCode] = KbCheck;
     if keyCode(escape_key)
         fprintf('%s: ESCAPE key detected. Finished after %d trials.\n',...
             datestr(now), trial_number);
         break;
-    else
-        % Only wait the ITI if we're continuing with trials
-        fprintf('  - Waiting an ITI of %.3f s\n', iti);
-        pause(iti);
     end
 end
 
