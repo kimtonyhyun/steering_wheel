@@ -53,8 +53,12 @@ classdef ScreenPTB < handle
             obj.cursor_ypos = obj.height / 4;
 
             obj.indicator = false;
-            ind_size = 128; % pixels
-            obj.indicator_rect = [0 obj.height-ind_size ind_size obj.height];
+            ind_size = 200; % pixels
+            % Indicator is at the middle of the screen, at the bottom
+            obj.indicator_rect = [obj.width/2-ind_size/2
+                                  obj.height-ind_size
+                                  obj.width/2+ind_size/2
+                                  obj.height];
 
             % obj.waitframes is a KEY parameter for Psychtoolbox. It
             % determines the number of frames that must be drawn for a

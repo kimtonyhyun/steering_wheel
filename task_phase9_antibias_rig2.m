@@ -4,7 +4,7 @@ clear;
 
 % cd('C:\Users\octopus\Documents\steering_wheel_task');
 
-a = arduino('COM3');
+a = arduino('COM4');
 
 sound_hit = audioread('sound/10kHz_500ms_fadein.mp3');
 sound_miss = audioread('sound/White_500ms.mp3');
