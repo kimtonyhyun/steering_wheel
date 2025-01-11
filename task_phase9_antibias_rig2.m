@@ -205,6 +205,8 @@ while trial_number < num_trials
     if keyCode(escape_key)
         fprintf('%s: ESCAPE key detected. Finished after %d trials.\n',...
             datestr(now), trial_number);
+        a.stop_behavior_clock;
+        a.set_screen_ttl(0);
         clear screen; % Return control back to Matlab command window
         break;
     end
